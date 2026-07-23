@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
-import { sitesData, historicalData } from './data';
+import { weeklyData, historicalData } from './data';
 import { 
   Fuel, 
-  AlertTriangle, 
   CheckCircle2, 
   XCircle, 
-  TrendingUp, 
-  Clock, 
   ShieldAlert,
-  Search,
-  Filter
+  Calendar
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from 'recharts';
 
 export default function App() {
+  // État de la semaine sélectionnée (par défaut : l'état actuel)
+  const [selectedWeek, setSelectedWeek] = useState('13-17-juillet');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEtat, setFilterEtat] = useState('TOUS');
+
+  // Récupération des sites de la semaine active
+  const currentWeekInfo = weeklyData[selectedWeek];
+  const sitesData = currentWeekInfo.sites;
 
   // Filtrage des sites
   const filteredSites = sitesData.filter(site => {
@@ -25,7 +27,7 @@ export default function App() {
     return matchesSearch && matchesEtat;
   });
 
-  // Calculs KPI globaux
+  // Calculs KPI dynamiques
   const totalGasoil = sitesData.reduce((acc, curr) => acc + curr.quantiteCuveP, 0);
   const totalSites = sitesData.length;
   const sitesFonctionnels = sitesData.filter(s => s.etat === 'F').length;
@@ -35,8 +37,8 @@ export default function App() {
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', backgroundColor: '#f4f6f9', minHeight: '100vh', padding: '24px' }}>
       
-      {/* En-tête */}
-      <header style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* En-tête avec Sélecteur Dynamique de Semaine */}
+      <header style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '28px', color: '#1e293b', margin: 0, fontWeight: 'bold' }}>
             ⛽ CARBURFLOW - Energy & Fleet Dashboard
@@ -45,12 +47,23 @@ export default function App() {
             Direction Technique - DRL BUF Centre | Suivi des Consommations & Cuves GES
           </p>
         </div>
-        <div style={{ backgroundColor: '#e2e8f0', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 'bold', color: '#334155' }}>
-          Semaine du 13 au 17 Juillet 2026
+
+        {/* LISTE DÉROULANTE DES SEMAINES */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#fff', padding: '8px 16px', borderRadius: '10px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', border: '1px solid #cbd5e1' }}>
+          <Calendar color="#2563eb" size={20} />
+          <select 
+            value={selectedWeek} 
+            onChange={(e) => setSelectedWeek(e.target.value)}
+            style={{ border: 'none', background: 'transparent', fontSize: '14px', fontWeight: 'bold', color: '#1e293b', cursor: 'pointer', outline: 'none' }}
+          >
+            <option value="13-17-juillet">📍 État Actuel (13 - 17 Juillet 2026)</option>
+            <option value="06-10-juillet">📅 Semaine du 06 au 10 Juillet 2026</option>
+            <option value="22-26-juin">📜 Semaine du 22 au 26 Juin 2026</option>
+          </select>
         </div>
       </header>
 
-      {/* Cartes KPI */}
+      {/* Cartes KPI Dynamiques */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         
         <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderLeft: '4px solid #3b82f6' }}>
@@ -59,7 +72,7 @@ export default function App() {
             <Fuel color="#3b82f6" size={24} />
           </div>
           <h2 style={{ fontSize: '24px', margin: '12px 0 0 0', color: '#0f172a' }}>{totalGasoil.toLocaleString()} L</h2>
-          <span style={{ fontSize: '12px', color: '#10b981' }}>▲ Inclut livraisons Neptune Oil</span>
+          <span style={{ fontSize: '12px', color: '#64748b' }}>Volume cumulé de la semaine</span>
         </div>
 
         <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderLeft: '4px solid #10b981' }}>
@@ -68,7 +81,7 @@ export default function App() {
             <CheckCircle2 color="#10b981" size={24} />
           </div>
           <h2 style={{ fontSize: '24px', margin: '12px 0 0 0', color: '#0f172a' }}>{sitesFonctionnels} / {totalSites}</h2>
-          <span style={{ fontSize: '12px', color: '#64748b' }}>{((sitesFonctionnels/totalSites)*100).toFixed(0)}% du parc opérationnel</span>
+          <span style={{ fontSize: '12px', color: '#10b981' }}>{((sitesFonctionnels/totalSites)*100).toFixed(0)}% du parc opérationnel</span>
         </div>
 
         <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderLeft: '4px solid #ef4444' }}>
@@ -76,13 +89,8 @@ export default function App() {
             <span style={{ color: '#64748b', fontSize: '14px' }}>En Panne / HS</span>
             <XCircle color="#ef4444" size={24} />
           </div>
-          {/* Modification ici : Affichage X / Total */}
-          <h2 style={{ fontSize: '24px', margin: '12px 0 0 0', color: '#ef4444' }}>
-            {sitesEnPanne} / {totalSites}
-          </h2>
-          <span style={{ fontSize: '12px', color: '#ef4444' }}>
-            {((sitesEnPanne / totalSites) * 100).toFixed(0)}% du parc hors service
-          </span>
+          <h2 style={{ fontSize: '24px', margin: '12px 0 0 0', color: '#ef4444' }}>{sitesEnPanne} / {totalSites}</h2>
+          <span style={{ fontSize: '12px', color: '#ef4444' }}>{((sitesEnPanne/totalSites)*100).toFixed(0)}% hors service</span>
         </div>
 
         <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderLeft: '4px solid #f59e0b' }}>
@@ -99,9 +107,8 @@ export default function App() {
       {/* Graphiques */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px', marginBottom: '24px' }}>
         
-        {/* Graphique 1 : Évolution des Stocks */}
         <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#334155' }}>📈 Évolution Multi-Semaines du Stock Total (Litres)</h3>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#334155' }}>📈 Tendance Globale du Stock (Litres)</h3>
           <div style={{ width: '100%', height: 250 }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={historicalData}>
@@ -115,14 +122,13 @@ export default function App() {
           </div>
         </div>
 
-        {/* Graphique 2 : Volume par Site */}
         <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#334155' }}>📊 Stock Gasoil Disponible par Site (Litres)</h3>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#334155' }}>📊 Stock par Site - {currentWeekInfo.label}</h3>
           <div style={{ width: '100%', height: 250 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={sitesData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="site" tick={{fontSize: 10}} />
+                <XAxis dataKey="site" tick={{fontSize: 9}} />
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="quantiteCuveP" fill="#10b981" radius={[4, 4, 0, 0]} />
@@ -133,16 +139,17 @@ export default function App() {
 
       </div>
 
-      {/* Tableau détaillé */}
+      {/* Tableau détaillé de la semaine sélectionnée */}
       <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-        
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-          <h3 style={{ margin: 0, fontSize: '18px', color: '#1e293b' }}>📋 État Détaillé des Sites et Autonomies</h3>
+          <h3 style={{ margin: 0, fontSize: '18px', color: '#1e293b' }}>
+            📋 Détail du Parc - {currentWeekInfo.label}
+          </h3>
           
           <div style={{ display: 'flex', gap: '12px' }}>
             <input 
               type="text" 
-              placeholder="Rechercher un site, marque..." 
+              placeholder="Rechercher site, marque..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none' }}
@@ -160,15 +167,14 @@ export default function App() {
           </div>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', textTransform: 'none', textAlign: 'left', fontSize: '14px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
           <thead>
             <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0', color: '#475569' }}>
               <th style={{ padding: '12px' }}>Site</th>
               <th style={{ padding: '12px' }}>Groupe / Puissance</th>
               <th style={{ padding: '12px' }}>État</th>
               <th style={{ padding: '12px' }}>Stock Cuve Principal</th>
-              <th style={{ padding: '12px' }}>Compteur Horaire</th>
-              <th style={{ padding: '12px' }}>Observations & Anomalies</th>
+              <th style={{ padding: '12px' }}>Observations</th>
             </tr>
           </thead>
           <tbody>
@@ -189,15 +195,11 @@ export default function App() {
                   </span>
                 </td>
                 <td style={{ padding: '12px', fontWeight: 'bold' }}>{site.quantiteCuveP.toLocaleString()} Litres</td>
-                <td style={{ padding: '12px', color: '#64748b' }}>{site.compteurHoraire ? `${site.compteurHoraire} h` : 'Illisible / XXXX'}</td>
-                <td style={{ padding: '12px', color: '#334155', maxWidth: '300px' }}>
-                  {site.observation}
-                </td>
+                <td style={{ padding: '12px', color: '#334155' }}>{site.observation}</td>
               </tr>
             ))}
           </tbody>
         </table>
-
       </div>
 
     </div>
