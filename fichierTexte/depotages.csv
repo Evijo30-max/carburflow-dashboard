@@ -1,0 +1,3 @@
+date_depotage;type_mouvement;site_source;site_destination;volume_litres;fournisseur_ou_ref
+15/07/2026;EXTERNE;;BEPANDA_INT;15000;NEPTUNE_OIL_BL_450
+16/07/2026;INTERNE;BEPANDA_INT;POP_BONANJO;500;TRANSFERT_CAMION_01
